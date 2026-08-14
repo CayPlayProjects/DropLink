@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080812">
+  <meta name="description" content="DropLink — temporary rooms for fast text, link and file sharing between devices.">
+  <title>DropLink — Instant device relay</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="orb orb-a" aria-hidden="true"></div>
+  <div class="orb orb-b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="DropLink">
+      <span class="brand-glyph">
+        <i></i><i></i>
+      </span>
+      <span class="brand-text">
+        <strong>DropLink</strong>
+        <small>instant device relay</small>
+      </span>
+    </a>
+
+    <div class="topbar-meta">
+      <span class="network-pill"><i></i><span id="networkLabel">LOCAL RELAY READY</span></span>
+      <span class="version">v0.1.5</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="landing" id="landingView">
+      <div class="landing-copy">
+        <div class="overline">
+          <span>01</span>
+          <span>MOVE IT. DON'T MAIL IT.</span>
+        </div>
+
+        <h1>
+          Скинь с одного
+          <span>устройства</span>
+          на другое.
+        </h1>
+
+        <p>
+          Создай временную комнату, открой её на втором устройстве по коду или QR
+          и передавай текст, ссылки и небольшие файлы почти мгновенно.
+        </p>
+
+        <div class="trust-row">
+          <span><i>01</i> Без аккаунта</span>
+          <span><i>02</i> Автоудаление</span>
+          <span><i>03</i> Короткий код</span>
+        </div>
+      </div>
+
+      <div class="action-deck">
+        <div class="deck-tabs" role="tablist" aria-label="DropLink actions">
+          <button class="deck-tab active" id="createTab" type="button" role="tab" aria-selected="true">CREATE DROP</button>
+          <button class="deck-tab" id="joinTab" type="button" role="tab" aria-selected="false">JOIN DROP</button>
+        </div>
+
+        <section class="deck-panel active" id="createPanel">
+          <span class="panel-kicker">NEW TEMPORARY ROOM</span>
+          <h2>Начать передачу</h2>
+          <p>Комната живёт только ограниченное время и хранится в памяти текущего сервера.</p>
+
+          <div class="ttl-select">
+            <span class="field-title">ROOM LIFETIME</span>
+            <div class="segmented" id="ttlSelector">
+              <button type="button" data-ttl="10">10 MIN</button>
+              <button type="button" data-ttl="30" class="active">30 MIN</button>
+              <button type="button" data-ttl="60">60 MIN</button>
+            </div>
+          </div>
+
+          <button class="main-cta" id="createRoomButton" type="button">
+            <span>
+              <small>READY WHEN YOU ARE</small>
+              <strong>CREATE DROP</strong>
+            </span>
+            <b>↗</b>
+          </button>
+        </section>
+
+        <section class="deck-panel" id="joinPanel">
+          <span class="panel-kicker">EXISTING ROOM</span>
+          <h2>Подключиться</h2>
+          <p>Введи шестизначный код с другого устройства. Регистр не имеет значения.</p>
+
+          <label class="code-field">
+            <span>ROOM CODE</span>
+            <input id="joinCodeInput" type="text" inputmode="text" maxlength="7" autocomplete="off" spellcheck="false" placeholder="A7K-3QX">
+          </label>
+
+          <button class="main-cta secondary" id="joinRoomButton" type="button">
+            <span>
+              <small>CONNECT TO ROOM</small>
+              <strong>JOIN DROP</strong>
+            </span>
+            <b>→</b>
+          </button>
+        </section>
+
+        <div class="deck-foot">
+          <span>NO DATABASE</span>
+          <span>NO SIGN-UP</span>
+          <span>EPHEMERAL BY DEFAULT</span>
+        </div>
+      </div>
+
+      <div class="relay-visual" aria-hidden="true">
+        <div class="device device-one">
+          <span class="device-top"></span>
+          <div class="device-screen">
+            <i class="packet p1"></i>
+            <i class="packet p2"></i>
+            <i class="packet p3"></i>
+          </div>
+        </div>
+
+        <div class="relay-line">
+          <i></i><i></i><i></i>
+        </div>
+
+        <div class="device device-two">
+          <span class="device-top"></span>
+          <div class="device-screen received">
+            <b>DROP</b>
+            <small>CONNECTED</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="room-view" id="roomView" hidden>
+      <div class="room-head">
+        <div class="room-identity">
+          <span class="room-label">ACTIVE DROP</span>
+          <div class="room-code-line">
+            <h2 id="roomCodeTitle">A7K-3QX</h2>
+            <button class="icon-action" id="copyCodeButton" type="button" title="Копировать код">COPY</button>
+          </div>
+          <p id="roomExpiryText">Room expires in 29:59</p>
+        </div>
+
+        <div class="room-state">
+          <div class="peer-state">
+            <span class="peer-dot"></span>
+            <strong id="peerCount">1 DEVICE</strong>
+          </div>
+          <button class="leave-button" id="leaveRoomButton" type="button">LEAVE ROOM</button>
+        </div>
+      </div>
+
+      <div class="room-layout">
+        <aside class="control-column">
+          <section class="share-card glass-card">
+            <div class="card-title">
+              <span>01 / INVITE</span>
+              <strong>Подключи второе устройство</strong>
+            </div>
+
+            <div class="qr-shell">
+              <div class="qr-inner" id="qrCode"></div>
+            </div>
+
+            <div class="invite-url" id="inviteUrl">http://...</div>
+
+            <label class="network-select-wrap" id="networkSelectWrap">
+              <span>NETWORK ADDRESS</span>
+              <select id="networkSelect" aria-label="Адрес локальной сети"></select>
+            </label>
+
+            <div class="button-row">
+              <button id="copyLinkButton" type="button">COPY LINK</button>
+              <button id="refreshQrButton" type="button">RESCAN NETWORK</button>
+            </div>
+
+            <div class="lan-note" id="lanNote">
+              QR использует локальный IP компьютера. Телефон должен быть в той же Wi‑Fi сети.
+            </div>
+
+            <div class="firewall-note">
+              <b>Телефон не открывает QR?</b>
+              <span>Убедись, что оба устройства в одной Wi‑Fi сети и Windows разрешил Node.js доступ к <strong>Private networks</strong>.</span>
+            </div>
+          </section>
+
+          <section class="peers-card glass-card">
+            <div class="card-title compact">
+              <span>02 / DEVICES</span>
+              <strong>Кто сейчас в комнате</strong>
+            </div>
+            <div class="peer-list" id="peerList">
+              <span class="peer-chip"><i></i>This device</span>
+            </div>
+          </section>
+        </aside>
+
+        <section class="transfer-column">
+          <div class="composer glass-card">
+            <div class="composer-top">
+              <div>
+                <span>03 / SEND</span>
+                <strong>Передать сейчас</strong>
+              </div>
+              <span class="char-counter"><b id="charCount">0</b>/8000</span>
+            </div>
+
+            <textarea id="messageInput" maxlength="8000" placeholder="Вставь текст, ссылку, код или заметку…"></textarea>
+
+            <div class="composer-actions">
+              <div class="quick-actions">
+                <button id="pasteButton" type="button">PASTE</button>
+                <button id="clearMessageButton" type="button">CLEAR</button>
+              </div>
+              <button class="send-button" id="sendMessageButton" type="button">
+                SEND
+                <span>↗</span>
+              </button>
+            </div>
+
+            <label class="file-drop" id="fileDropZone">
+              <input type="file" id="fileInput">
+              <span class="file-plus">+</span>
+              <span>
+                <strong>DROP A FILE</strong>
+                <small>до 12 MB • хранится только до удаления комнаты</small>
+              </span>
+              <b>BROWSE</b>
+            </label>
+
+            <div class="upload-progress" id="uploadProgress" hidden>
+              <div>
+                <span id="uploadName">file.zip</span>
+                <strong id="uploadPercent">0%</strong>
+              </div>
+              <i><b id="uploadBar"></b></i>
+            </div>
+          </div>
+
+          <div class="stream-head">
+            <div>
+              <span>04 / ROOM STREAM</span>
+              <strong>Последние передачи</strong>
+            </div>
+            <button id="scrollBottomButton" type="button">LATEST ↓</button>
+          </div>
+
+          <div class="stream" id="stream">
+            <div class="stream-empty" id="streamEmpty">
+              <div class="empty-orbit">
+                <span></span>
+              </div>
+              <strong>Пока здесь пусто</strong>
+              <p>Отправь первую ссылку, текст или файл — он появится на всех подключённых устройствах.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>DropLink / temporary relay</span>
+    <span>ROOM DATA IS KEPT IN SERVER MEMORY ONLY</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <i></i>
+    <span id="toastText">Done</span>
+  </div>
+
+  <script src="/qrcode.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
