@@ -1,12 +1,13 @@
 {
   "name": "droplink",
-  "version": "0.1.5",
+  "version": "0.2.2",
   "private": true,
-  "description": "Temporary rooms for instantly sharing text, links and small files between devices.",
+  "description": "Fast temporary local file, text and link relay between devices.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node start.js",
+    "dev": "node --watch server.js",
+    "server": "node server.js"
   },
   "engines": {
     "node": ">=18"
