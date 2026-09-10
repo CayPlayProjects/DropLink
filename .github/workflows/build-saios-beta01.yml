@@ -1,0 +1,71 @@
+name: Build SaiOS Beta 0.1 ISO
+
+on:
+  push:
+    branches: [saios-build-beta01]
+    paths:
+      - 'saios-ci/**'
+      - '.github/workflows/build-saios-beta01.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore SaiOS source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          base64 -d saios-ci/source.tar.gz.b64 > /tmp/saios-source.tar.gz
+          tar -xzf /tmp/saios-source.tar.gz -C "$GITHUB_WORKSPACE"
+          mv saios_ci_src saios-build
+          chmod +x saios-build/build.sh saios-build/clean.sh saios-build/scripts/*.sh saios-build/auto/* saios-build/config/hooks/live/* saios-build/tools/*.sh
+
+      - name: Verify source
+        run: |
+          cd saios-build
+          ./tools/verify-source.sh
+
+      - name: Build ISO in Debian 13
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker run --rm --privileged \
+            -v "$GITHUB_WORKSPACE/saios-build:/work" \
+            -w /work \
+            debian:trixie \
+            bash -lc '
+              set -euxo pipefail
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y --no-install-recommends live-build debootstrap ca-certificates xorriso squashfs-tools dosfstools mtools isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin
+              chmod +x build.sh clean.sh scripts/*.sh auto/* config/hooks/live/* tools/*.sh
+              ./tools/verify-source.sh
+              ./build.sh
+            '
+
+      - name: Locate ISO
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ls -lah saios-build/*.iso
+          cp saios-build/SaiOS-Beta-0.1-amd64.hybrid.iso SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
+          sha256sum SaiOS-Beta-0.1-First-Light-Installer-amd64.iso | tee SaiOS-Beta-0.1-First-Light-Installer-amd64.iso.sha256
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: SaiOS-Beta-0.1-First-Light-Installer-amd64
+          path: |
+            SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
+            SaiOS-Beta-0.1-First-Light-Installer-amd64.iso.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
