@@ -28,6 +28,9 @@ jobs:
           echo "c47bb6225393c84146a36f2c05495831d6c50e711d4c8907cb259838a34bdf7d  /tmp/saios-source.tar.gz" | sha256sum -c -
           tar -xzf /tmp/saios-source.tar.gz -C "$GITHUB_WORKSPACE"
           mv saios_ci_src saios-build
+          # Debian 13 (trixie) ships Spectacle as kde-spectacle.
+          sed -i 's/^spectacle$/kde-spectacle/' saios-build/config/package-lists/saios.list.chroot
+          grep -x 'kde-spectacle' saios-build/config/package-lists/saios.list.chroot
           chmod +x saios-build/build.sh saios-build/clean.sh saios-build/scripts/*.sh saios-build/auto/* saios-build/config/hooks/live/* saios-build/tools/*.sh
 
       - name: Inspect restored source
