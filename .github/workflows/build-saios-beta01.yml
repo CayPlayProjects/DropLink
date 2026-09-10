@@ -56,6 +56,9 @@ jobs:
               apt-get update
               apt-get install -y --no-install-recommends live-build debootstrap ca-certificates xorriso squashfs-tools dosfstools mtools isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin
               chmod +x build.sh clean.sh scripts/*.sh auto/* config/hooks/live/* tools/*.sh
+              # auto/build and auto/clean recursively call lb build/clean.
+              # build.sh already performs these operations, so disable the recursive wrappers in CI.
+              rm -f auto/build auto/clean
               ./build.sh
             ' 2>&1 | tee saios-build/build-ci.log
           status=${PIPESTATUS[0]}
