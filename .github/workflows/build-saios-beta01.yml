@@ -84,8 +84,18 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          ls -lah saios-build/*.iso
-          cp saios-build/SaiOS-Beta-0.1-amd64.hybrid.iso SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
+          echo 'Generated ISO candidates:'
+          find saios-build -type f -name '*.iso' -print -exec ls -lh {} \;
+          iso="$(find saios-build -type f -name '*.hybrid.iso' -print -quit)"
+          if [ -z "$iso" ]; then
+            iso="$(find saios-build -type f -name '*.iso' -print -quit)"
+          fi
+          if [ -z "$iso" ]; then
+            echo 'ERROR: live-build completed but no ISO file was found.' >&2
+            exit 1
+          fi
+          echo "Using ISO: $iso"
+          cp "$iso" SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
           sha256sum SaiOS-Beta-0.1-First-Light-Installer-amd64.iso | tee SaiOS-Beta-0.1-First-Light-Installer-amd64.iso.sha256
 
       - name: Upload ISO
