@@ -1,0 +1,1 @@
+Force SaiOS Beta 0.1 diagnostic ISO rebuild after adding persistent live-build logs.
