@@ -44,7 +44,8 @@ jobs:
       - name: Build ISO in Debian 13
         shell: bash
         run: |
-          set -euxo pipefail
+          set -uo pipefail
+          set +e
           docker run --rm --privileged \
             -v "$GITHUB_WORKSPACE/saios-build:/work" \
             -w /work \
@@ -56,7 +57,22 @@ jobs:
               apt-get install -y --no-install-recommends live-build debootstrap ca-certificates xorriso squashfs-tools dosfstools mtools isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin
               chmod +x build.sh clean.sh scripts/*.sh auto/* config/hooks/live/* tools/*.sh
               ./build.sh
-            '
+            ' 2>&1 | tee saios-build/build-ci.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo '===== LAST 300 BUILD LOG LINES ====='
+            tail -n 300 saios-build/build-ci.log || true
+            exit "$status"
+          fi
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SaiOS-build-log
+          path: saios-build/build-ci.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Locate ISO
         shell: bash
