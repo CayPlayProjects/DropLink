@@ -23,15 +23,23 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          base64 -d saios-ci/source.tar.gz.b64 > /tmp/saios-source.tar.gz
+          cat saios-ci/chunks/part*.txt > /tmp/saios-source.b64
+          base64 -d /tmp/saios-source.b64 > /tmp/saios-source.tar.gz
+          echo "c47bb6225393c84146a36f2c05495831d6c50e711d4c8907cb259838a34bdf7d  /tmp/saios-source.tar.gz" | sha256sum -c -
           tar -xzf /tmp/saios-source.tar.gz -C "$GITHUB_WORKSPACE"
           mv saios_ci_src saios-build
           chmod +x saios-build/build.sh saios-build/clean.sh saios-build/scripts/*.sh saios-build/auto/* saios-build/config/hooks/live/* saios-build/tools/*.sh
 
-      - name: Verify source
+      - name: Inspect restored source
+        shell: bash
         run: |
-          cd saios-build
-          ./tools/verify-source.sh
+          set -euxo pipefail
+          test -x saios-build/build.sh
+          test -f saios-build/config/package-lists/saios.list.chroot
+          test -f saios-build/config/includes.chroot/etc/calamares/branding/saios/branding.desc
+          test -f saios-build/config/includes.chroot/etc/calamares/branding/saios/welcome.svg
+          test -f saios-build/config/includes.chroot/usr/share/wallpapers/SaiOS/contents/images/1920x1080.svg
+          find saios-build/config/includes.chroot/usr/local/bin -maxdepth 1 -type f -name 'saios-*' -print
 
       - name: Build ISO in Debian 13
         shell: bash
@@ -47,7 +55,6 @@ jobs:
               apt-get update
               apt-get install -y --no-install-recommends live-build debootstrap ca-certificates xorriso squashfs-tools dosfstools mtools isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin
               chmod +x build.sh clean.sh scripts/*.sh auto/* config/hooks/live/* tools/*.sh
-              ./tools/verify-source.sh
               ./build.sh
             '
 
