@@ -49,8 +49,10 @@ jobs:
         run: |
           set -uo pipefail
           set +e
+          mkdir -p "$GITHUB_WORKSPACE/saios-output"
           docker run --rm --privileged \
             -v "$GITHUB_WORKSPACE/saios-build:/work" \
+            -v "$GITHUB_WORKSPACE/saios-output:/out" \
             -w /work \
             debian:trixie \
             bash -lc '
@@ -63,6 +65,19 @@ jobs:
               # build.sh already performs these operations, so disable the recursive wrappers in CI.
               rm -f auto/build auto/clean
               ./build.sh
+
+              echo "===== ISO inside build container ====="
+              find -L /work -maxdepth 5 -type f -iname "*.iso" -print -exec ls -lh {} \; || true
+              ISO_PATH="$(find -L /work -maxdepth 5 -type f -iname "*.iso" -print -quit)"
+              if [ -z "$ISO_PATH" ]; then
+                echo "ERROR: live-build completed but no ISO is visible inside /work." >&2
+                exit 1
+              fi
+              echo "Persisting ISO from: $ISO_PATH"
+              cp --dereference "$ISO_PATH" /out/SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
+              sync
+              test -s /out/SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
+              ls -lh /out/SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
             ' 2>&1 | tee saios-build/build-ci.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
@@ -84,18 +99,9 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          echo 'Generated ISO candidates:'
-          find saios-build -type f -name '*.iso' -print -exec ls -lh {} \;
-          iso="$(find saios-build -type f -name '*.hybrid.iso' -print -quit)"
-          if [ -z "$iso" ]; then
-            iso="$(find saios-build -type f -name '*.iso' -print -quit)"
-          fi
-          if [ -z "$iso" ]; then
-            echo 'ERROR: live-build completed but no ISO file was found.' >&2
-            exit 1
-          fi
-          echo "Using ISO: $iso"
-          cp "$iso" SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
+          test -s saios-output/SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
+          ls -lh saios-output/SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
+          cp saios-output/SaiOS-Beta-0.1-First-Light-Installer-amd64.iso SaiOS-Beta-0.1-First-Light-Installer-amd64.iso
           sha256sum SaiOS-Beta-0.1-First-Light-Installer-amd64.iso | tee SaiOS-Beta-0.1-First-Light-Installer-amd64.iso.sha256
 
       - name: Upload ISO
